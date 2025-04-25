@@ -70,7 +70,6 @@ impl Server {
             };
 
             // Wating for incoming connections asynchronously
-            // let (socket, _) = tcp_listener.accept().await.unwrap();
             let (socket, _) = match tcp_listener.accept().await {
                 Ok(s) => s,
                 Err(e) => {

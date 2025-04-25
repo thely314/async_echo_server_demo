@@ -12,6 +12,30 @@ use tokio::{
 /// 
 /// This function reads data from the client and echoes it back.
 /// It runs in a loop until the client disconnects.
+/// # Errors
+/// Returns an std::io::Error if the read or write operation fails.
+/// # Examples
+/// ```
+/// use tokio::net::TcpListener;
+/// use echo_lib::server::handle::handle_client;
+/// 
+/// #[tokio::main]
+/// async fn main() {
+///     let mut tcp_listener = TcpListener::bind("127.0.0.1:7210").await.unwrap();
+/// 
+///     let (socket, _) = match tcp_listener.accept().await {
+///         Ok(s) => s,
+///         Err(e) => {
+///             eprintln!("Failed to accept connection: {}", e);
+///         continue;
+///         },
+///     };
+/// 
+///     tokio::task::spawn(async move {
+///         handle::handle_client(socket, permit).await
+///     });
+/// }
+/// ```
 pub async fn handle_client(
     mut socket: TcpStream, 
     _permit: tokio::sync::OwnedSemaphorePermit
@@ -22,11 +46,7 @@ pub async fn handle_client(
     // The size of the buffer can be adjusted based on the expected message size.
     let mut buf = [0u8; 1024];
 
-    // Separate the socket into read and write halves
-    // This allows us to count the time for idle timeout separately for reading
-    // let (mut reader, mut writer) = socket.into_split();
-
-    // Set the allowed times for reading
+    // Set the allowed times for retrying
     let mut retry_count = 0;
     loop {
         match socket.read(buf.as_mut()).await {

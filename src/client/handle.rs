@@ -15,6 +15,25 @@ use tokio::{
 /// 
 /// This function creates a task that reads lines from the standard input and sends them to the provided channel.
 /// It runs in a loop until the channel is closed or an error occurs.
+/// 
+/// Returns a Future that needs to be awaited.
+/// # Examples
+/// ```
+/// use tokio::{net::TcpStream, sync::mpsc};
+/// use echo_lib::client::handle;
+/// 
+/// #[tokio::main]
+/// async fn main() {
+///     let mut tcp_stream = TcpStream::connect("127.0.0.1:7210").await.unwrap();
+///     
+///     let (reader, writer) = tcp_stream.unwrap().into_split();
+///     let (tx, rx) = mpsc::channel::<String>(100);
+///     let input_handle = handle::user_input_handle(tx).await;
+///     let network_handle = handle::server_stream_handle(rx, writer, reader).await;
+/// 
+///     let _ = tokio::join!(input_handle, network_handle);
+/// }
+/// ```
 pub async fn user_input_handle(tx: tokio::sync::mpsc::Sender<String>) -> tokio::task::JoinHandle<()> {
     tokio::spawn(async move {
         while tx.capacity() == 0 {
@@ -37,13 +56,31 @@ pub async fn user_input_handle(tx: tokio::sync::mpsc::Sender<String>) -> tokio::
 /// 
 /// This function creates a task that reads messages from the server and writes them to the standard output.
 /// It also reads messages from the user input task and sends them to the server.
+/// 
+/// Returns a Future that needs to be awaited.
+/// # Examples
+/// ```
+/// use tokio::{net::TcpStream, sync::mpsc};
+/// use echo_lib::client::handle;
+/// 
+/// #[tokio::main]
+/// async fn main() {
+///     let mut tcp_stream = TcpStream::connect("127.0.0.1:7210").await.unwrap();
+///     
+///     let (reader, writer) = tcp_stream.unwrap().into_split();
+///     let (tx, rx) = mpsc::channel::<String>(100);
+///     let input_handle = handle::user_input_handle(tx).await;
+///     let network_handle = handle::server_stream_handle(rx, writer, reader).await;
+/// 
+///     let _ = tokio::join!(input_handle, network_handle);
+/// }
+/// ```
 pub async fn server_stream_handle(
     mut rx: tokio::sync::mpsc::Receiver<String>, 
     mut writer: OwnedWriteHalf, 
     mut reader: OwnedReadHalf
-// ) -> tokio::task::JoinHandle<()> {
-) -> Result<(), anyhow::Error> {
-    // tokio::spawn(async move {
+) -> tokio::task::JoinHandle<Result<(), anyhow::Error>> {
+    tokio::spawn(async move {
         let mut server_response = [0u8; 1024];
 
         loop {
@@ -78,5 +115,5 @@ pub async fn server_stream_handle(
                 }
             }
         }
-    // })
+    })
 }

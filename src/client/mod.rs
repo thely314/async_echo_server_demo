@@ -13,8 +13,6 @@ pub struct Client {
     // target server host
     pub host: String,
 
-    // TODO Have not implemented the timeout configuration yet
-    pub timeout: u64,
     pub tcp_stream: Option<TcpStream>,
 }
 
@@ -22,7 +20,7 @@ impl Client {
     /// Create a new Client instance.
     /// 
     /// This function initializes the client with the specified port, host, and timeout values.
-    pub async fn new(port: u16, host_str: &str, timeout: u64) -> Self {
+    pub async fn new(port: u16, host_str: &str) -> Self {
         let tcp_stream = TcpStream::connect(format!("{}:{}", host_str, port));
         match tcp_stream.await {
             Ok(stream) => {
@@ -30,7 +28,6 @@ impl Client {
                 Client {
                     port,
                     host: host_str.to_string(),
-                    timeout,
                     tcp_stream: Some(stream),
                 }
             }
@@ -39,7 +36,6 @@ impl Client {
                 Client {
                     port,
                     host: host_str.to_string(),
-                    timeout,
                     tcp_stream: None,
                 }
             }
